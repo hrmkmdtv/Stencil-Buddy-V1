@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Offline - Stencil Art Generator</title>
+    <style>
+        :root {
+            --primary: #FF6B6B;
+            --secondary: #4ECDC4;
+        }
+
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            margin: 0;
+            padding: 20px;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #f7f9f9 0%, #e3e7e7 100%);
+        }
+
+        .offline-container {
+            max-width: 600px;
+            text-align: center;
+            padding: 40px;
+            background: white;
+            border-radius: 16px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .offline-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+            animation: pulse 2s infinite;
+        }
+
+        h1 {
+            color: var(--primary);
+            margin-bottom: 20px;
+        }
+
+        p {
+            color: #2C3E50;
+            line-height: 1.6;
+            margin-bottom: 30px;
+        }
+
+        .saved-projects {
+            margin-top: 30px;
+            padding: 20px;
+            background: rgba(78, 205, 196, 0.1);
+            border-radius: 8px;
+        }
+
+        .project-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 15px;
+            margin-top: 20px;
+        }
+
+        .project-item {
+            background: white;
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .project-item:hover {
+            transform: translateY(-2px);
+        }
+
+        .project-preview {
+            width: 100%;
+            height: 100px;
+            background-size: cover;
+            background-position: center;
+        }
+
+        .project-info {
+            padding: 10px;
+        }
+
+        .project-date {
+            font-size: 0.8em;
+            color: #666;
+        }
+
+        .retry-button {
+            background: var(--secondary);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: all 0.3s;
+            margin-top: 20px;
+        }
+
+        .retry-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(78, 205, 196, 0.3);
+        }
+
+        .connection-status {
+            display: inline-flex;
+            align-items: center;
+            padding: 8px 16px;
+            background: rgba(255, 107, 107, 0.1);
+            border-radius: 20px;
+            margin-top: 20px;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background: var(--primary);
+            border-radius: 50%;
+            margin-right: 8px;
+            animation: blink 1s infinite;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.1); }
+            100% { transform: scale(1); }
+        }
+
+        @keyframes blink {
+            0% { opacity: 0.3; }
+            50% { opacity: 1; }
+            100% { opacity: 0.3; }
+        }
+    </style>
+</head>
+<body>
+    <div class="offline-container">
+        <div class="offline-icon">🌐</div>
+        <h1>You're Offline</h1>
+        <p>No internet connection available. You can still access your saved projects and continue working offline.</p>
+        
+        <button class="retry-button" onclick="retryConnection()">
+            Try Again
+        </button>
+
+        <div class="connection-status">
+            <span class="status-dot"></span>
+            Checking connection...
+        </div>
+
+        <div class="saved-projects">
+            <h2>Your Saved Projects</h2>
+            <div class="project-grid" id="projectGrid">
+                Loading saved projects...
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Check connection status
+        async function checkConnection() {
+            try {
+                const response = await fetch('/api/ping');
+                if (response.ok) {
+                    window.location.reload();
+                }
+            } catch (error) {
+                // Still offline
+                setTimeout(checkConnection, 5000);
+            }
+        }
+
+        function retryConnection() {
+            const button = document.querySelector('.retry-button');
+            button.textContent = 'Checking...';
+            button.disabled = true;
+            
+            checkConnection().finally(() => {
+                button.textContent = 'Try Again';
+                button.disabled = false;
+            });
+        }
+
+        // Load saved projects from IndexedDB
+        async function loadSavedProjects() {
+            try {
+                const db = await openDatabase();
+                const tx = db.transaction('projects', 'readonly');
+                const store = tx.objectStore('projects');
+                const projects = await store.getAll();
+
+                renderProjects(projects);
+            } catch (error) {
+                console.error('Failed to load projects:', error);
+                document.getElementById('projectGrid').innerHTML = 
+                    '<p>Unable to load saved projects</p>';
+            }
+        }
+
+        function renderProjects(projects) {
+            const grid = document.getElementById('projectGrid');
+            
+            if (projects.length === 0) {
+                grid.innerHTML = '<p>No saved projects found</p>';
+                return;
+            }
+
+            grid.innerHTML = projects
+                .sort((a, b) => b.timestamp - a.timestamp)
+                .map(project => `
+                    <div class="project-item" onclick="loadProject(${project.id})">
+                        <div class="project-preview" style="background-image: url(${project.thumbnail})"></div>
+                        <div class="project-info">
+                            <div class="project-date">
+                                ${new Date(project.timestamp).toLocaleDateString()}
+                            </div>
+                        </div>
+                    </div>
+                `).join('');
+        }
+
+        function openDatabase() {
+            return new Promise((resolve, reject) => {
+                const request = indexedDB.open('stencilArtOffline', 1);
+                request.onerror = () => reject(request.error);
+                request.onsuccess = () => resolve(request.result);
+            });
+        }
+
+        function loadProject(id) {
+            window.location.href = `/?project=${id}`;
+        }
+
+        // Initialize
+        checkConnection();
+        loadSavedProjects();
+    </script>
+</body>
+</html>

@@ -1,0 +1,86 @@
+{
+    "name": "Stencil Art Generator",
+    "short_name": "Stencil Art",
+    "description": "Create stunning stencil art effects from your images",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#ffffff",
+    "theme_color": "#4ECDC4",
+    "orientation": "any",
+    "icons": [
+        {
+            "src": "/icons/icon-192.png",
+            "sizes": "192x192",
+            "type": "image/png",
+            "purpose": "any maskable"
+        },
+        {
+            "src": "/icons/icon-512.png",
+            "sizes": "512x512",
+            "type": "image/png",
+            "purpose": "any maskable"
+        }
+    ],
+    "screenshots": [
+        {
+            "src": "/screenshots/desktop.png",
+            "sizes": "1280x720",
+            "type": "image/png",
+            "form_factor": "wide"
+        },
+        {
+            "src": "/screenshots/mobile.png",
+            "sizes": "720x1280",
+            "type": "image/png",
+            "form_factor": "narrow"
+        }
+    ],
+    "shortcuts": [
+        {
+            "name": "New Project",
+            "url": "/?new=true",
+            "icons": [{ "src": "/icons/new.png", "sizes": "96x96" }]
+        },
+        {
+            "name": "Recent Projects",
+            "url": "/?view=recent",
+            "icons": [{ "src": "/icons/recent.png", "sizes": "96x96" }]
+        }
+    ],
+    "share_target": {
+        "action": "/?share",
+        "method": "POST",
+        "enctype": "multipart/form-data",
+        "params": {
+            "title": "title",
+            "text": "text",
+            "url": "url",
+            "files": [{
+                "name": "image",
+                "accept": ["image/*"]
+            }]
+        }
+    },
+    "file_handlers": [
+        {
+            "action": "/?edit",
+            "accept": {
+                "image/*": [".jpg", ".jpeg", ".png", ".webp"]
+            }
+        }
+    ],
+    "protocol_handlers": [
+        {
+            "protocol": "web+stencilart",
+            "url": "/?share=%s"
+        }
+    ],
+    "related_applications": [
+        {
+            "platform": "webapp",
+            "url": "https://stencilart.app/manifest.json"
+        }
+    ],
+    "prefer_related_applications": false,
+    "categories": ["photo", "art", "creativity", "graphics"]
+}
